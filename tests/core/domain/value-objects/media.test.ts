@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Media } from '../../../src/core/domain/value-objects/media';
+import { Media } from '../../../../src/core/domain/value-objects/media';
 
 describe('Media Value Object', () => {
   it('should create valid media object', () => {

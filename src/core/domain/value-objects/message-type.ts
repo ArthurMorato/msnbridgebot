@@ -1,3 +1,7 @@
+import { Result, ResultFactory } from "../../../shared/result";
+import { ValidationError } from "../errors";
+
+
 export enum MessageType {
   TEXT = 'text',
   IMAGE = 'image',
