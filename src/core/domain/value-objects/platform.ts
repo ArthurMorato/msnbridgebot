@@ -1,3 +1,6 @@
+import { Result, ResultFactory } from "../../../shared/result";
+import { ValidationError } from "../errors";
+
 export enum Platform {
   TELEGRAM = 'telegram',
   WHATSAPP = 'whatsapp'
