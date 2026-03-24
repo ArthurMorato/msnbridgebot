@@ -1,5 +1,4 @@
-export { DomainError } from './domain-error';
-export * from './message-errors';
+export * from './domain-error';
 export * from './platform-errors';
 export * from './validation-errors';
-export { ErrorMatcher } from './error-handler';
+export * from './error-handler';

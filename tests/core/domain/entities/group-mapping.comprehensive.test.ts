@@ -40,7 +40,7 @@ describe('GroupMapping Entity - Regras de Negócio', () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error).toBe('id');
+        expect((result.error as ValidationError).violation).toBe('id');
       }
     });
 
@@ -53,7 +53,8 @@ describe('GroupMapping Entity - Regras de Negócio', () => {
       
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error).toBe('telegramGroupId');
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect((result.error as ValidationError).violation).toBe('telegramGroupId');
       }
     });
 
@@ -66,7 +67,8 @@ describe('GroupMapping Entity - Regras de Negócio', () => {
       
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error).toBe('whatsappGroupId');
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect((result.error as ValidationError).violation).toBe('whatsappGroupId');
       }
     });
   });

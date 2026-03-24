@@ -30,6 +30,36 @@ describe('Sistema de Erros - Pattern Matching e Tipagem', () => {
       expect(error.metadata?.retryCount).toBe(3);
     });
 
+    it('deve serializar e desserializar corretamente com toJSON', () => {
+  const error = new LoopPreventionError('msg-001', 'telegram', { retryCount: 3 });
+  
+  const serialized = JSON.stringify(error);
+  const parsed = JSON.parse(serialized);
+  
+  // Verifica propriedades básicas
+  expect(parsed.name).toBe('LoopPreventionError');
+  expect(parsed.message).toBeTypeOf('string');
+  expect(parsed.message).toContain('Loop prevention');
+  expect(parsed.code).toBe('LOOP_PREVENTION_ERROR');
+  
+  // Verifica metadados
+  expect(parsed.metadata).toBeDefined();
+  expect(parsed.metadata.messageId).toBe('msg-001');
+  expect(parsed.metadata.platform).toBe('telegram');
+  expect(parsed.metadata.retryCount).toBe(3);
+  
+  // Verifica que pode ser reconstruído (opcional)
+  const reconstructed = new LoopPreventionError(
+    parsed.metadata.messageId,
+    parsed.metadata.platform,
+    parsed.metadata
+  );
+  
+  expect(reconstructed.message).toBe(error.message);
+  expect(reconstructed.code).toBe(error.code);
+});
+
+
     it('deve criar PlatformRateLimitError com reset time', () => {
       const resetAt = new Date('2024-01-01T12:00:00Z');
       const error = new PlatformRateLimitError(
@@ -58,9 +88,9 @@ describe('Sistema de Erros - Pattern Matching e Tipagem', () => {
   describe('ErrorMatcher - Pattern Matching', () => {
     it('deve executar handler para código específico', () => {
       const matcher = new ErrorMatcher<string>()
-        .on('VALIDATION_ERROR', (error) => `Validation failed: ${error}`)
-        .on('LOOP_PREVENTION_ERROR', (error) => 'Loop detected')
-        .otherwise((error) => 'Unknown error');
+        .on('VALIDATION_ERROR', (error: ValidationError) => `Validation failed: ${error.field}`)
+        .on('LOOP_PREVENTION_ERROR', () => 'Loop detected')
+        .otherwise((error: DomainError) => `Default: ${error.code}`);
       
       const validationError = new ValidationError('email', 'Invalid');
       const result = matcher.match(validationError);
@@ -70,18 +100,18 @@ describe('Sistema de Erros - Pattern Matching e Tipagem', () => {
 
     it('deve executar handler padrão quando não encontrado', () => {
       const matcher = new ErrorMatcher<string>()
-        .on('VALIDATION_ERROR', () => 'Validation')
-        .otherwise((error) => `Default: ${error.code}`);
+        .on('PLATFORM_RATE_LIMIT_ERROR', () => 'Rate limit')
+        .otherwise((error: DomainError) => `Default: ${error.code}`);
       
-      const unknownError = new ValidationError('email', 'Invalid');
+      const unknownError = new InvalidPlatformError('discord');
       const result = matcher.match(unknownError);
       
-      expect(result).toBe('Default: UNKNOWN_ERROR');
+      expect(result).toBe('Default: INVALID_PLATFORM_ERROR');
     });
 
     it('deve lançar erro se nenhum handler encontrado', () => {
       const matcher = new ErrorMatcher<string>()
-        .on('VALIDATION_ERROR', () => 'Validation');
+        .on('PLATFORM_RATE_LIMIT_ERROR', () => 'Rate limit');
       
       const unknownError = new ValidationError('email', 'Invalid');
       
@@ -92,13 +122,13 @@ describe('Sistema de Erros - Pattern Matching e Tipagem', () => {
       const matcher = new ErrorMatcher<string>()
         .onAny(
           ['VALIDATION_ERROR', 'REQUIRED_FIELD_ERROR'],
-          (error) => 'Field error'
+          () => 'Field error'
         )
         .otherwise(() => 'Other');
       
       const validationError = new ValidationError('email', 'Invalid');
       const requiredError = new RequiredFieldError('email');
-      const otherError = new ValidationError('email', 'Invalid');
+      const otherError = new LoopPreventionError('msg-001', 'telegram');
       
       expect(matcher.match(validationError)).toBe('Field error');
       expect(matcher.match(requiredError)).toBe('Field error');
@@ -120,6 +150,7 @@ describe('Sistema de Erros - Pattern Matching e Tipagem', () => {
       const serialized = JSON.stringify(error);
       const parsed = JSON.parse(serialized);
       
+      expect(typeof parsed.message).toBe('string');
       expect(parsed.message).toContain('Loop prevention');
       expect(parsed.code).toBe('LOOP_PREVENTION_ERROR');
     });
